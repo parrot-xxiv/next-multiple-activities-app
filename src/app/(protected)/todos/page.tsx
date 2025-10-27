@@ -6,18 +6,29 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Loader2, Trash2 } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 type Todo = {
   id: string
   title: string
   completed: boolean
+  priority: 'low' | 'medium' | 'high'
 }
 
 export default function TodosPage() {
   const [todos, setTodos] = useState<Todo[]>([])
   const [newTodo, setNewTodo] = useState('')
+  const [selectedPriority, setSelectedPriority] = useState<'low' | 'medium' | 'high'>('low');
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = useMemo(() => createClient(), [])
+  const supabase = useMemo(() => createClient(), []);
 
   const fetchTodos = useCallback(async () => {
     const {
@@ -51,6 +62,7 @@ export default function TodosPage() {
 
   const addTodo = async (e: React.FormEvent) => {
     e.preventDefault()
+
     if (!newTodo.trim()) return
 
     const {
@@ -60,7 +72,7 @@ export default function TodosPage() {
 
     const { error } = await supabase
       .from('todos')
-      .insert({ title: newTodo.trim(), user_id: user.id })
+      .insert({ title: newTodo.trim(), user_id: user.id, priority: selectedPriority })
 
     if (!error) {
       setNewTodo('')
@@ -95,6 +107,7 @@ export default function TodosPage() {
     fetchTodos()
   }
 
+
   return (
     <div className="max-w-2xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Todo List</h1>
@@ -105,10 +118,23 @@ export default function TodosPage() {
           placeholder="Add a new todo..."
           className="flex-1"
         />
+        <Select value={selectedPriority} onValueChange={setSelectedPriority}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select a fruit" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Fruits</SelectLabel>
+              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
         <Button type="submit">Add</Button>
       </form>
       <div className="space-y-2">
-        { isLoading ? <div className="flex items-center gap-2 text-sm text-gray-500">
+        {isLoading ? <div className="flex items-center gap-2 text-sm text-gray-500">
           <Loader2 className="h-4 w-4 animate-spin" /> Loading tasks...
         </div> : todos.length ? todos.map((todo) => (
           <div
@@ -122,6 +148,7 @@ export default function TodosPage() {
             <span className={`flex-1 ${todo.completed ? 'line-through text-gray-500' : ''}`}>
               {todo.title}
             </span>
+             <span className={`badge ${todo.priority}`}>{todo.priority}</span>
             <Button
               variant="ghost"
               size="icon"
